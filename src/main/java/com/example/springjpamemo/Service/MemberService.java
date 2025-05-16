@@ -6,6 +6,7 @@ import com.example.springjpamemo.dto.SignupResponseDto;
 import com.example.springjpamemo.entity.Member;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
@@ -25,14 +26,29 @@ public class MemberService {
         return new SignupResponseDto(result.getId(), result.getUserName(), result.getAge());
     }
 
+    @Transactional(readOnly = true)
     public MemberResponseDto findMemberById(Long id){
         Optional<Member> result = memberRepository.findById(id);
-        if(result.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "does not exist id : " + id);
-        }
-        Member findMember = result.get();
+        Member findMember = validFindById(result, id.toString());
+
         return new MemberResponseDto(findMember.getUserName(), findMember.getAge());
     }
 
+    @Transactional
+    public void updatePassword(Long id, String oldPassword, String newPassword){
+        Optional<Member> result = memberRepository.findById(id);
+        Member findMember = validFindById(result, id.toString());
 
+        if(!findMember.getPassword().equals(oldPassword)){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "password is incorrect");
+        }
+        findMember.updatePassword(newPassword);
+    }
+
+    private <T> T validFindById(Optional<T> optionalResponse, String id){
+        if(optionalResponse.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "does not exist id : " + id);
+        }
+        return optionalResponse.get();
+    }
 }
