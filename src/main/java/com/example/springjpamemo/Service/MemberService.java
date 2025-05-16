@@ -1,9 +1,14 @@
 package com.example.springjpamemo.Service;
 
 import com.example.springjpamemo.Repository.MemberRepository;
+import com.example.springjpamemo.dto.MemberResponseDto;
 import com.example.springjpamemo.dto.SignupResponseDto;
 import com.example.springjpamemo.entity.Member;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 @Service
 public class MemberService {
@@ -15,8 +20,19 @@ public class MemberService {
     }
 
     public SignupResponseDto signup(String userName, String password, Integer age){
-        Member member = new Member(userName, password, age);
-        Member save = memberRepository.save(member);
-        return new SignupResponseDto(save.getId(), save.getUserName(), save.getAge());
+        Member requestMember = new Member(userName, password, age);
+        Member result = memberRepository.save(requestMember);
+        return new SignupResponseDto(result.getId(), result.getUserName(), result.getAge());
     }
+
+    public MemberResponseDto findMemberById(Long id){
+        Optional<Member> result = memberRepository.findById(id);
+        if(result.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "does not exist id : " + id);
+        }
+        Member findMember = result.get();
+        return new MemberResponseDto(findMember.getUserName(), findMember.getAge());
+    }
+
+
 }
